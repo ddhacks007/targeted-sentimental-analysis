@@ -13,11 +13,15 @@ import torch.utils.data.distributed
 from components.Model import SentimentClassifier
 from components.Trainer import train
 from components.Logger import logger
-
+try:
+    from sagemaker_inference import environment
+except:
+    from sagemaker_training import environment
 
 
 
 def _train(args):
+    print('iside training args......')
     is_distributed = len(args.hosts) > 1 and args.dist_backend is not None
     logger.debug("Distributed training - {}".format(is_distributed))
 
@@ -38,7 +42,7 @@ def _train(args):
         )
 
     
-    logger.info("Going to train")
+    print("Going to train.................")
     return train(args)
 
 
@@ -89,10 +93,13 @@ if __name__ == "__main__":
     )
 
     # env = environment.Environment()
-    parser.add_argument("--hosts", type=list, default=[])
-    parser.add_argument("--current-host", type=str, default=[])
-    parser.add_argument("--model-dir", type=str, default=".")
-    parser.add_argument("--data-dir", type=str, default="./yaso-tsa/TSA-MD/TSA-MD.train.json")
-    parser.add_argument("--num-gpus", type=int, default=0)
+    env = environment.Environment()
+    print(env)
+
+    parser.add_argument("--hosts", type=list, default=env.hosts)
+    parser.add_argument("--current-host", type=str, default=env.current_host)
+    parser.add_argument("--model-dir", type=str, default=env.model_dir)
+    parser.add_argument("--data-dir", type=str, default=os.path.join(env.channel_input_dirs.get("training"), "Train-file.json"))
+    parser.add_argument("--num-gpus", type=int, default=env.num_gpus)
     args = parser.parse_args()
     _train(args)
